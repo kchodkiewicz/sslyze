@@ -103,6 +103,7 @@ setup(
         "tls-parser>=2,<3",
         "pydantic>=1.10,<2.4",
         "pyOpenSSL>=23,<24",
+        "service-identity>=18.1.0"
     ],
     # cx_freeze info for Windows builds with Python embedded
     options={"build_exe": {"packages": ["cffi", "cryptography"], "include_files": get_include_files()}},

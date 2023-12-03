@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-
-from ssl import CertificateError, match_hostname
 from typing import Optional, List, cast
 
+import ipaddress
 import cryptography
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -10,6 +9,10 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509 import ExtensionNotFound, ExtensionOID, Certificate, load_pem_x509_certificate, TLSFeature
 from cryptography.x509.ocsp import load_der_ocsp_response, OCSPResponseStatus, OCSPResponse
 import nassl.ocsp_response
+from service_identity.cryptography import (
+    verify_certificate_hostname, verify_certificate_ip_address, VerificationError, CertificateError
+)
+
 
 from sslyze.plugins.certificate_info._certificate_utils import (
     parse_subject_alternative_name_extension,
@@ -274,26 +277,46 @@ class CertificateDeploymentAnalyzer:
         )
 
 
+def _is_ip_address(hostname: str) -> bool:
+    try:
+        
+        _ = ipaddress.ipaddress(hostname)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
 def _certificate_matches_hostname(certificate: Certificate, server_hostname: str) -> bool:
     """Verify that the certificate was issued for the given hostname."""
-    # Extract the names from the certificate to create the properly-formatted dictionary
     try:
-        cert_subject = certificate.subject
-    except ValueError:
-        # Cryptography could not parse the certificate https://github.com/nabla-c0d3/sslyze/issues/495
+        if _is_ip_address(server_hostname):
+            verify_certificate_ip_address(certificate, server_hostname)
+        else:
+            verify_certificate_hostname(certificate, server_hostname)
+    except (VerificationError, CertificateError):
         return False
-
-    subj_alt_name_ext = parse_subject_alternative_name_extension(certificate)
-    subj_alt_name_as_list = [("DNS", name) for name in subj_alt_name_ext.dns_names]
-    subj_alt_name_as_list.extend([("IP Address", ip) for ip in subj_alt_name_ext.ip_addresses])
-
-    certificate_names = {
-        "subject": (tuple([("commonName", name) for name in get_common_names(cert_subject)]),),
-        "subjectAltName": tuple(subj_alt_name_as_list),
-    }
-    # CertificateError is raised on failure
-    try:
-        match_hostname(certificate_names, server_hostname)  # type: ignore
+    else:
         return True
-    except CertificateError:
-        return False
+
+    # # Extract the names from the certificate to create the properly-formatted dictionary
+    # try:
+    #     cert_subject = certificate.subject
+    # except ValueError:
+    #     # Cryptography could not parse the certificate https://github.com/nabla-c0d3/sslyze/issues/495
+    #     return False
+
+    # subj_alt_name_ext = parse_subject_alternative_name_extension(certificate)
+    # subj_alt_name_as_list = [("DNS", name) for name in subj_alt_name_ext.dns_names]
+    # subj_alt_name_as_list.extend([("IP Address", ip) for ip in subj_alt_name_ext.ip_addresses])
+
+    # certificate_names = {
+    #     "subject": (tuple([("commonName", name) for name in get_common_names(cert_subject)]),),
+    #     "subjectAltName": tuple(subj_alt_name_as_list),
+    # }
+    # # CertificateError is raised on failure
+    # try:
+    #     match_hostname(certificate_names, server_hostname)  # type: ignore
+    #     return True
+    # except CertificateError:
+    #     return False
