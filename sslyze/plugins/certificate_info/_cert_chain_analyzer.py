@@ -279,7 +279,6 @@ class CertificateDeploymentAnalyzer:
 
 def _is_ip_address(hostname: str) -> bool:
     try:
-        
         _ = ipaddress.ipaddress(hostname)
     except ValueError:
         return False
