@@ -297,25 +297,3 @@ def _certificate_matches_hostname(certificate: Certificate, server_hostname: str
         return False
     else:
         return True
-
-    # # Extract the names from the certificate to create the properly-formatted dictionary
-    # try:
-    #     cert_subject = certificate.subject
-    # except ValueError:
-    #     # Cryptography could not parse the certificate https://github.com/nabla-c0d3/sslyze/issues/495
-    #     return False
-
-    # subj_alt_name_ext = parse_subject_alternative_name_extension(certificate)
-    # subj_alt_name_as_list = [("DNS", name) for name in subj_alt_name_ext.dns_names]
-    # subj_alt_name_as_list.extend([("IP Address", ip) for ip in subj_alt_name_ext.ip_addresses])
-
-    # certificate_names = {
-    #     "subject": (tuple([("commonName", name) for name in get_common_names(cert_subject)]),),
-    #     "subjectAltName": tuple(subj_alt_name_as_list),
-    # }
-    # # CertificateError is raised on failure
-    # try:
-    #     match_hostname(certificate_names, server_hostname)  # type: ignore
-    #     return True
-    # except CertificateError:
-    #     return False
