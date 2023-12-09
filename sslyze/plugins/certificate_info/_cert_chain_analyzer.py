@@ -9,15 +9,9 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509 import ExtensionNotFound, ExtensionOID, Certificate, load_pem_x509_certificate, TLSFeature
 from cryptography.x509.ocsp import load_der_ocsp_response, OCSPResponseStatus, OCSPResponse
 import nassl.ocsp_response
-from service_identity.cryptography import (
-    verify_certificate_hostname, verify_certificate_ip_address, VerificationError, CertificateError
-)
+from service_identity.cryptography import verify_certificate_hostname, verify_certificate_ip_address
+from service_identity import VerificationError, CertificateError
 
-
-from sslyze.plugins.certificate_info._certificate_utils import (
-    parse_subject_alternative_name_extension,
-    get_common_names,
-)
 from sslyze.plugins.certificate_info._symantec import SymantecDistructTester
 from sslyze.plugins.certificate_info.trust_stores.trust_store import TrustStore, PathValidationResult
 
@@ -277,9 +271,9 @@ class CertificateDeploymentAnalyzer:
         )
 
 
-def _is_ip_address(hostname: str) -> bool:
+def _is_ip_address(address: str) -> bool:
     try:
-        _ = ipaddress.ipaddress(hostname)
+        _ = ipaddress.ip_address(address)
     except ValueError:
         return False
     else:
