@@ -15,13 +15,19 @@ leaf_path = Path(__file__).absolute().parent / ".." / ".." / "certificates" / "g
 leaf_pem = leaf_path.read_bytes()
 certificate = load_pem_x509_certificate(leaf_pem, default_backend())
 
+leaf_path = Path(__file__).absolute().parent / ".." / ".." / "certificates" / "google-com.pem"
+leaf_pem = leaf_path.read_bytes()
+certificate_google = load_pem_x509_certificate(leaf_pem, default_backend())
+
 
 class TestCertificateUtils:
     def test_certificate_matches_hostname_good_hostname(self):
-        assert _certificate_matches_hostname(certificate, "www.github.com")
+        assert _certificate_matches_hostname(certificate_google, "wildcard.youtube.com")
+        assert _certificate_matches_hostname(certificate_google, "youtube.com")
+        assert _certificate_matches_hostname(certificate_google, "google.com")
 
     def test_certificate_matches_hostname_bad_hostname(self):
-        assert not _certificate_matches_hostname(certificate, "notgithub.com")
+        assert not _certificate_matches_hostname(certificate_google, "level-two.wildcard.youtube.com")
 
     def test_get_common_names(self):
         assert get_common_names(certificate.subject) == ["github.com"]
